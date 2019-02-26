@@ -18,6 +18,7 @@ var clone = require("clone");
 var jsonata = require("jsonata");
 var safeJSONStringify = require("json-stringify-safe");
 var util = require("util");
+var crypto = require('crypto');
 
 function generateId() {
     return (1+Math.random()*4294967295).toString(16);
@@ -586,8 +587,12 @@ function encodeObject(msg,opts) {
     }
     return msg;
 }
+function rev(flows) {
+    return  crypto.createHash('md5').update(JSON.stringify(flows)).digest("hex")
+};
 
 module.exports = {
+    rev:rev,
     encodeObject: encodeObject,
     ensureString: ensureString,
     ensureBuffer: ensureBuffer,

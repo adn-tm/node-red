@@ -115,19 +115,39 @@ function setFlows(_config,type,muteLog,forceStart) {
     var diff;
     var newFlowConfig;
     var isLoad = false;
+    var flowId="global";
     if (type === "load") {
         isLoad = true;
         configSavePromise = loadFlows().then(function(_config) {
             config = clone(_config.flows);
             newFlowConfig = flowUtil.parseConfig(clone(config));
             type = "full";
-            return _config.rev;
+            return (_config.rev?_config.rev.global:false) || _config.rev;
         });
     } else {
         config = clone(_config);
         newFlowConfig = flowUtil.parseConfig(clone(config));
         diff = flowUtil.diffConfigs(activeFlowConfig,newFlowConfig);
+        
+        if (type == "flow") {
+            flowId=Object.keys(newFlowConfig.flows).pop();
+            if (flowId) {
+                var allNodes=Object.keys(newFlowConfig.allNodes);
+                ["added", "changed", "linked", "removed", "rewired"].forEach(function(p){
+                   diff[p]=diff[p].filter(function(n){ return  allNodes.indexOf(n)>=0; })
+                });
 
+                ["allNodes", "configs", "flows", "subflows"].forEach(function(p){
+                    if (activeFlowConfig[p])
+                        for(var f in activeFlowConfig[p])
+                            newFlowConfig[p][f] = newFlowConfig[p][f] || activeFlowConfig[p][f];
+                });
+                newFlowConfig.missingTypes = newFlowConfig.missingTypes || [];
+                if (activeFlowConfig.missingTypes) newFlowConfig.missingTypes=newFlowConfig.missingTypes.concat(activeFlowConfig.missingTypes);
+
+            }
+        }
+        console.log("SetFlows diff=", diff, type)
         // Now the flows have been compared, remove any credentials from newFlowConfig
         // so they don't cause false-positive diffs the next time a flow is deployed
         for (var id in newFlowConfig.allNodes) {
@@ -135,6 +155,7 @@ function setFlows(_config,type,muteLog,forceStart) {
                 delete newFlowConfig.allNodes[id].credentials;
             }
         }
+
 
         credentials.clean(config);
         var credsDirty = credentials.dirty();
@@ -153,16 +174,27 @@ function setFlows(_config,type,muteLog,forceStart) {
             if (!isLoad) {
                 log.debug("saved flow revision: "+flowRevision);
             }
-            activeConfig = {
-                flows:config,
-                rev:flowRevision
-            };
+            if (type!=="flow")
+                activeConfig = {
+                    flows:config,
+                    rev:{global:flowRevision}
+                };
+            else {
+                activeConfig = activeConfig || {flows:[], rev:{}};
+                config=config || [];
+                var flowIds=config.map(function(n){ return n.id; });
+                activeConfig.flows=activeConfig.flows.filter(function(n){
+                    return flowIds.indexOf(n.id)<0;
+                })
+                activeConfig.rev[flowId]=flowRevision;
+                activeConfig.flows=activeConfig.flows.concat(config);
+            }
             activeFlowConfig = newFlowConfig;
             if (forceStart || started) {
                 return stop(type,diff,muteLog).then(function() {
                     return context.clean(activeFlowConfig).then(function() {
                         start(type,diff,muteLog).then(function() {
-                            events.emit("runtime-event",{id:"runtime-deploy",payload:{revision:flowRevision},retain: true});
+                            events.emit("runtime-event", {id:"runtime-deploy", payload:{revision:flowRevision}, retain: true});
                         });
                         return flowRevision;
                     });
@@ -198,8 +230,18 @@ function eachNode(cb) {
     }
 }
 
-function getFlows() {
-    return activeConfig;
+function getFlows(aId) {
+    console.log("getFlows.activeConfig=", activeConfig);
+    if (!activeConfig) return {flows:[], rev:undefined};
+    if (!aId) return {flows:activeConfig.flows, rev:activeConfig.rev.global};
+    var r={flows:[], rev:activeConfig.rev[aId]};
+    activeConfig.flows.forEach(function(node){
+        if ((node.id==aId) || (node.z==aId) )
+            r.flows.push(node);
+                    
+    })
+    r.rev=r.rev || redUtil.rev(activeConfig.flows);
+    return r;
 }
 
 function delegateError(node,logMessage,msg) {

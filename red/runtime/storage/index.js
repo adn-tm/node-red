@@ -71,7 +71,8 @@ var storageModuleInterface = {
             return storageModule.init(runtime.settings,runtime);
         },
         getFlows: function() {
-            return storageModule.getFlows().then(function(flows) {
+            
+            var a= storageModule.getFlows().then(function(flows) {
                 return storageModule.getCredentials().then(function(creds) {
                     var result = {
                         flows: flows,
@@ -81,6 +82,8 @@ var storageModuleInterface = {
                     return result;
                 })
             });
+            console.log("storage flows", a);
+            return a;
         },
         saveFlows: function(config) {
             var flows = config.flows;

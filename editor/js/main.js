@@ -110,10 +110,16 @@
     }
 
     function loadFlows(done) {
+        var currentHash = window.location.hash;
+        var data=undefined;
+        if (/^#flow\/.+$/.test(currentHash)) {
+            data={id:currentHash.substring(6)};
+        }
         $.ajax({
             headers: {
                 "Accept":"application/json",
             },
+            data:data, 
             cache: false,
             url: 'flows',
             success: function(nodes) {

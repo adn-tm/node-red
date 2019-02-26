@@ -19,7 +19,8 @@ RED.deploy = (function() {
     var deploymentTypes = {
         "full":{img:"red/images/deploy-full-o.png"},
         "nodes":{img:"red/images/deploy-nodes-o.png"},
-        "flows":{img:"red/images/deploy-flows-o.png"}
+        "flows":{img:"red/images/deploy-flows-o.png"},
+        "flow":{img:"red/images/deploy-flows-o.png"}
     }
 
     var ignoreDeployWarnings = {
@@ -28,7 +29,8 @@ RED.deploy = (function() {
         invalid: false
     }
 
-    var deploymentType = "full";
+    // var deploymentType = "full";
+    var deploymentType = "flow";
 
     var deployInflight = false;
 
@@ -364,6 +366,14 @@ RED.deploy = (function() {
             if (!force) {
                 data.rev = RED.nodes.version();
             }
+            
+            if (deploymentType === "flow") {
+                var currentHash = window.location.hash;
+                if (/^#flow\/.+$/.test(currentHash)) {
+                    data.flow=currentHash.substring(6);
+                }
+            }
+
 
             deployInflight = true;
             $("#header-shade").show();

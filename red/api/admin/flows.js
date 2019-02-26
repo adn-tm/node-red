@@ -24,12 +24,13 @@ module.exports = {
     },
     get: function(req,res) {
         var version = req.get("Node-RED-API-Version")||"v1";
+        console.log("getFlows", req.query, version);
         if (version === "v1") {
             log.audit({event: "flows.get",version:"v1"},req);
             res.json(redNodes.getFlows().flows);
         } else if (version === "v2") {
             log.audit({event: "flows.get",version:"v2"},req);
-            res.json(redNodes.getFlows());
+            res.json(redNodes.getFlows(req.query.id));
         } else {
             log.audit({event: "flows.get",version:version,error:"invalid_api_version"},req);
             res.status(400).json({code:"invalid_api_version", message:"Invalid API Version requested"});
@@ -62,7 +63,7 @@ module.exports = {
             if (version === "v2") {
                 flowConfig = flows.flows;
                 if (flows.hasOwnProperty('rev')) {
-                    var currentVersion = redNodes.getFlows().rev;
+                    var currentVersion = redNodes.getFlows(flows.flow).rev;
                     if (currentVersion !== flows.rev) {
                         //TODO: log warning
                         return res.status(409).json({code:"version_mismatch"});
