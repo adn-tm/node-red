@@ -240,7 +240,7 @@ function getFlows(aId) {
             r.flows.push(node);
                     
     })
-    r.rev=r.rev || redUtil.rev(activeConfig.flows);
+    r.rev=r.rev || r.flows.length?redUtil.rev(r.flows):undefined;
     return r;
 }
 

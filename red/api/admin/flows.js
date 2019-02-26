@@ -64,7 +64,7 @@ module.exports = {
                 flowConfig = flows.flows;
                 if (flows.hasOwnProperty('rev')) {
                     var currentVersion = redNodes.getFlows(flows.flow).rev;
-                    if (currentVersion !== flows.rev) {
+                    if (currentVersion && currentVersion !== flows.rev) {
                         //TODO: log warning
                         return res.status(409).json({code:"version_mismatch"});
                     }

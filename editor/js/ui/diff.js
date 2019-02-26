@@ -1061,12 +1061,18 @@ RED.diff = (function() {
         }
     }
     function getRemoteDiff(callback) {
+        var data=undefined;
+        var currentHash = window.location.hash;
+        if (/^#flow\/.+$/.test(currentHash)) {
+            data={id:currentHash.substring(6)};
+        }
         $.ajax({
             headers: {
                 "Accept":"application/json",
             },
             cache: false,
             url: 'flows',
+            data:data,
             success: function(nodes) {
                 var localFlow = RED.nodes.createCompleteNodeSet();
                 var originalFlow = RED.nodes.originalFlow();
