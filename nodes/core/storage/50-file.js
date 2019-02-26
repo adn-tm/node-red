@@ -26,6 +26,7 @@ module.exports = function(RED) {
         this.appendNewline = n.appendNewline;
         this.overwriteFile = n.overwriteFile.toString();
         this.createDir = n.createDir || false;
+        this.encoding = n.encoding || "binary";
         var node = this;
         node.wstream = null;
         node.msgQueue = [];
@@ -40,6 +41,9 @@ module.exports = function(RED) {
                     clearTimeout(node.tout);
                     node.tout = null;
                 },333);
+            }
+            if (filename && !path.isAbsolute(filename)) {
+                filename=path.join(RED.settings.get("userDir"), filename);
             }
             if (filename === "") {
                 node.warn(RED._("file.errors.nofilename"));
@@ -57,6 +61,7 @@ module.exports = function(RED) {
                     done();
                 });
             } else if (msg.hasOwnProperty("payload") && (typeof msg.payload !== "undefined")) {
+
                 var dir = path.dirname(filename);
                 if (node.createDir) {
                     try {
@@ -75,9 +80,10 @@ module.exports = function(RED) {
                 if (typeof data === "boolean") { data = data.toString(); }
                 if (typeof data === "number") { data = data.toString(); }
                 if ((node.appendNewline) && (!Buffer.isBuffer(data))) { data += os.EOL; }
+               // console.log("Write tot file", filename,  RED.settings.get("userDir"));
                 var buf = Buffer.from(data);
                 if (node.overwriteFile === "true") {
-                    var wstream = fs.createWriteStream(filename, { encoding:'binary', flags:'w', autoClose:true });
+                    var wstream = fs.createWriteStream(filename, { encoding:node.encoding, flags:'w', autoClose:true });
                     node.wstream = wstream;
                     wstream.on("error", function(err) {
                         node.error(RED._("file.errors.writefail",{error:err.toString()}),msg);
@@ -118,7 +124,7 @@ module.exports = function(RED) {
                         }
                     }
                     if (recreateStream) {
-                        node.wstream = fs.createWriteStream(filename, { encoding:'binary', flags:'a', autoClose:true });
+                        node.wstream = fs.createWriteStream(filename, { encoding:node.encoding, flags:'a', autoClose:true });
                         node.wstream.on("open", function(fd) {
                             try {
                                 var stat = fs.statSync(filename);
@@ -240,6 +246,9 @@ module.exports = function(RED) {
                 node.warn(RED._("file.errors.nofilename"));
             }
             else {
+                if (filename && !path.isAbsolute(filename)) {
+                    filename=path.join(RED.settings.get("userDir"), filename);
+                }
                 msg.filename = filename;
                 var lines = Buffer.from([]);
                 var spare = "";
