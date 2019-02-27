@@ -115,8 +115,17 @@ RED.deploy = (function() {
         var activeNotifyMessage;
         RED.comms.subscribe("notification/runtime-deploy",function(topic,msg) {
             if (!activeNotifyMessage) {
+                var currentHash = window.location.hash;
+                if (/^#flow\/.+$/.test(currentHash)) {
+                    flow=currentHash.substring(6);
+                }
                 var currentRev = RED.nodes.version();
-                if (currentRev === null || deployInflight || currentRev === msg.revision) {
+                var flow;
+
+                currentRev=(flow && currentRev && typeof currentRev == "object") ? currentRev[flow] : currentRev;
+                var newRev= (flow && msg && msg.revision && typeof msg.revision == "object") ? msg.revision[flow] : msg.revision;
+
+                if (currentRev === null || deployInflight || currentRev === newRev) {
                     return;
                 }
                 var message = $('<p>').text(RED._('deploy.confirm.backgroundUpdate'));

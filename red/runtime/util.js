@@ -588,6 +588,7 @@ function encodeObject(msg,opts) {
     return msg;
 }
 function rev(flows) {
+    if (flows && flows.length && flows[0].rev) return flows[0].rev;
     return  crypto.createHash('md5').update(JSON.stringify(flows)).digest("hex")
 };
 

@@ -174,12 +174,17 @@ function setFlows(_config,type,muteLog,forceStart) {
             if (!isLoad) {
                 log.debug("saved flow revision: "+flowRevision);
             }
-            if (type!=="flow")
+            if (type!=="flow") {
+                var revs={};
+                config.forEach(function(a, i){
+                    config[i].rev=flowRevision;
+                    if (config[i].type==="tab") revs[config[i].id]=flowRevision
+                })
                 activeConfig = {
                     flows:config,
-                    rev:{global:flowRevision}
+                    rev:revs
                 };
-            else {
+            } else {
                 activeConfig = activeConfig || {flows:[], rev:{}};
                 config=config || [];
                 var flowIds=config.map(function(n){ return n.id; });
@@ -194,14 +199,14 @@ function setFlows(_config,type,muteLog,forceStart) {
                 return stop(type,diff,muteLog).then(function() {
                     return context.clean(activeFlowConfig).then(function() {
                         start(type,diff,muteLog).then(function() {
-                            events.emit("runtime-event", {id:"runtime-deploy", payload:{revision:flowRevision}, retain: true});
+                            events.emit("runtime-event", {id:"runtime-deploy", payload:{revision:activeConfig.rev}, retain: true});
                         });
                         return flowRevision;
                     });
                 }).catch(function(err) {
                 })
             } else {
-                events.emit("runtime-event",{id:"runtime-deploy",payload:{revision:flowRevision},retain: true});
+                events.emit("runtime-event",{id:"runtime-deploy",payload:{revision:activeConfig.rev},retain: true});
             }
         });
 }
